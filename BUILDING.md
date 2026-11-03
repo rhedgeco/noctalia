@@ -129,6 +129,8 @@ Credential and encrypted-state persistence requires a Secret Service provider at
 
 `jemalloc` is recommended but optional. It reduces memory fragmentation in long-running sessions, and on glibc systems it is used automatically when detected. Use Meson's `-Djemalloc=enabled` or `-Djemalloc=disabled` option to require or disable it explicitly.
 
+GStreamer 1.24+ is optional and powers the plugin `ui.video` control. It is built automatically when its development files are found (Arch `gstreamer gst-plugins-base`, Fedora `gstreamer1-devel gstreamer1-plugins-base-devel`, Debian/Ubuntu `libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`); use `-Dvideo=enabled` or `-Dvideo=disabled` to require or disable it. Zero-copy playback on `nvidia-vaapi-driver` additionally needs the development files of GStreamer's VA library and libva (Arch `gst-plugins-bad-libs libva`, Fedora `gstreamer1-plugins-bad-free-devel libva-devel`, Debian/Ubuntu `libgstreamer-plugins-bad1.0-dev libva-dev`); without them NVIDIA GPUs decode to system memory. Playback also needs these GStreamer plugins at runtime: `gst-plugins-base`, `gst-plugins-good`, `gst-plugins-bad` (its `va` plugin provides hardware decoding), and `gst-libav`, plus a VA-API driver for zero-copy hardware decoding.
+
 Sanitizer runtime packages are only needed for ASan/UBSan builds configured with `just configure asan`.
 
 The sources are built as C++23, which requires GCC 13+ or Clang 16+. Current rolling and recent stable distros (Arch, Fedora 38+, Debian 13, Ubuntu 24.04+) ship a new enough compiler by default. On Debian 12 "bookworm" install `g++-13` and point Meson at it (e.g. `CXX=g++-13 just configure`).

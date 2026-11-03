@@ -152,6 +152,39 @@ libjxl_threads_dep  = dependency('libjxl_threads', required: true)
 # ── System: libsndfile (sound effect decoding) ───────────────────────────────
 sndfile_dep = dependency('sndfile', required: true)
 
+# ── System: GStreamer (ui.video playback) ──────────────────────────────────────
+# Optional. 1.24 is the first release with DMA_DRM caps, which the zero-copy DMABuf path needs.
+video_opt = get_option('video')
+video_deps = [
+  dependency('gstreamer-1.0', version: '>=1.24', required: video_opt),
+  dependency('gstreamer-app-1.0', version: '>=1.24', required: video_opt),
+  dependency('gstreamer-video-1.0', version: '>=1.24', required: video_opt),
+  dependency('gstreamer-allocators-1.0', version: '>=1.24', required: video_opt),
+]
+have_video = true
+foreach dep : video_deps
+  have_video = have_video and dep.found()
+endforeach
+if not have_video
+  video_deps = []
+endif
+# Optional on top of video: exports VA-API decoder surfaces as dmabufs directly, and lets the shell's
+# pipelines use VA drivers GStreamer does not enable by default. Together these are the zero-copy
+# path for nvidia-vaapi-driver, which decodes into dmabuf-exportable surfaces but advertises only
+# system-memory output.
+have_video_va = false
+if have_video
+  video_va_deps = [
+    dependency('gstreamer-va-1.0', version: '>=1.24', required: false),
+    dependency('libva', version: '>=1.12', required: false),
+    dependency('libva-drm', version: '>=1.12', required: false),
+  ]
+  have_video_va = video_va_deps[0].found() and video_va_deps[1].found() and video_va_deps[2].found()
+  if have_video_va
+    video_deps += video_va_deps
+  endif
+endif
+
 # ── Wuffs, fzy, Material Color Utilities, Luau ──────────────────────────────
 # Vendored under third_party/ by default. -Dsystem_libraries=true links system
 # copies instead. None of them ship pkg-config files, so they are found by
@@ -345,7 +378,7 @@ _noctalia_compile_definitions = [
   '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
   '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
   '-DNOCTALIA_VERSION="' + meson.project_version() + '"',
-] + jemalloc_cpp_args
+] + jemalloc_cpp_args + (have_video ? ['-DNOCTALIA_HAVE_VIDEO=1'] : []) + (have_video_va ? ['-DNOCTALIA_HAVE_VIDEO_VA=1'] : [])
 
 # PipeWire's pkg-config adds -fno-strict-aliasing and -fno-strict-overflow to
 # every target that uses it. lib/ does not depend on PipeWire, so both trees set
@@ -554,6 +587,9 @@ _noctalia_sources = files(
   'src/launcher/wallpaper_provider.cpp',
   'src/launcher/window_provider.cpp',
   'src/launcher/usage_tracker.cpp',
+  'src/media/video_decoder.cpp',
+  'src/media/video_program.cpp',
+  'src/media/video_service.cpp',
   'src/net/http_client.cpp',
   'src/net/uri.cpp',
   'src/net/url_open.cpp',
@@ -629,6 +665,7 @@ _noctalia_sources = files(
   'src/shell/desktop/widgets/desktop_media_player_widget.cpp',
   'src/shell/desktop/widgets/desktop_sticker_widget.cpp',
   'src/shell/desktop/widgets/desktop_sysmon_widget.cpp',
+  'src/shell/desktop/widgets/desktop_video_widget.cpp',
   'src/shell/desktop/widgets/desktop_volume_widget.cpp',
   'src/shell/desktop/widgets/plugin_desktop_widget.cpp',
   'src/shell/desktop/widgets/desktop_weather_widget.cpp',
@@ -880,6 +917,7 @@ _noctalia_sources = files(
   'src/time/time_service.cpp',
   'src/shell/calendar/calendar_view.cpp',
   'src/scripting/ui/pixel_stream_view.cpp',
+  'src/scripting/ui/video_view.cpp',
   'src/scripting/ui/ui_tree_reconciler.cpp',
   'src/shell/palette_swatch_preview.cpp',
   'src/shell/wayland/clipboard_service.cpp',
@@ -1027,7 +1065,7 @@ _noctalia_system_dependencies = [
   tomlplusplus_dep,
   libwebp_dep,
   sndfile_dep,
-] + jemalloc_deps + (dl_dep.found() ? [dl_dep] : [])
+] + video_deps + jemalloc_deps + (dl_dep.found() ? [dl_dep] : [])
 
 _noctalia_dependencies = _noctalia_system_dependencies + [
   mcu_dep,

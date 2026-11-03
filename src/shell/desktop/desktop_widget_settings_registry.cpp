@@ -3,6 +3,7 @@
 #include "i18n/i18n.h"
 #include "scripting/plugin_i18n.h"
 #include "scripting/plugin_registry.h"
+#include "shell/desktop/widgets/desktop_video_widget.h"
 #include "shell/settings/font_family_catalog.h"
 #include "shell/settings/widget_settings_registry.h"
 #include "system/format_units.h"
@@ -30,6 +31,7 @@ namespace desktop_settings {
         {.type = "media_player", .labelKey = "desktop-widgets.editor.types.media-player"},
         {.type = "sticker", .labelKey = "desktop-widgets.editor.types.sticker"},
         {.type = "sysmon", .labelKey = "desktop-widgets.editor.types.system-monitor"},
+        {.type = "video", .labelKey = "desktop-widgets.editor.types.video"},
         {.type = "volume", .labelKey = "desktop-widgets.editor.types.volume"},
         {.type = "weather", .labelKey = "desktop-widgets.editor.types.weather"},
     };
@@ -76,6 +78,12 @@ namespace desktop_settings {
 
     WidgetSettingSpec stringSpec(std::string_view key, std::string defaultValue = {}) {
       return baseSpec(key, WidgetControlKind::String, std::move(defaultValue));
+    }
+
+    WidgetSettingSpec fileSpec(std::string_view key, std::vector<std::string> extensions) {
+      auto spec = baseSpec(key, WidgetControlKind::File, std::string{});
+      spec.extensions = std::move(extensions);
+      return spec;
     }
 
     WidgetSettingSpec glyphSpec(std::string_view key, std::string defaultValue = {}) {
@@ -185,7 +193,7 @@ namespace desktop_settings {
     }
 
     const WidgetSettingVisibility backgroundOn{"background", {"true"}};
-    const bool backgroundDefault = type != "fancy_audio_visualizer";
+    const bool backgroundDefault = type != "fancy_audio_visualizer" && type != "video";
 
     auto bgColor = colorSpec("background_color", "surface");
     bgColor.visibleWhen = backgroundOn;
@@ -323,6 +331,18 @@ namespace desktop_settings {
       add(colorSpec("secondary_color", "secondary"));
     } else if (type == "sticker") {
       add(stringSpec("image_path"));
+      add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
+    } else if (type == "video") {
+      add(fileSpec("video_path", DesktopVideoWidget::fileExtensions()));
+      add(segmentedSpec(
+          "fit", "cover",
+          {{"cover", "desktop-widgets.editor.settings.fit-cover"},
+           {"contain", "desktop-widgets.editor.settings.fit-contain"},
+           {"stretch", "desktop-widgets.editor.settings.fit-stretch"}}
+      ));
+      add(intSpec("radius", 0, 0.0, 128.0, 1.0));
+      add(stepperIntSpec("width", 480, 16.0, 7680.0, 10.0));
+      add(stepperIntSpec("height", 270, 16.0, 4320.0, 10.0));
       add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
     } else if (type == "weather") {
       add(colorSpec("color", "on_surface"));

@@ -39,6 +39,8 @@
   libical,
   wireplumber,
   jemalloc,
+  gst_all_1,
+  libva,
   makeWrapper,
   git,
   gsettings-desktop-schemas,
@@ -58,6 +60,15 @@ let
       hash = "sha256-BlyXJtAI7WqXCTT3ylww8zoG0hBxaojJnQDvdQOXJPE=";
     };
   });
+  # Runtime GStreamer plugins for ui.video: core elements, demuxers, VA-API hardware decoders
+  # (zero-copy, in -bad), and the libav software decoders used as the fallback.
+  gstPlugins = with gst_all_1; [
+    gstreamer
+    gst-plugins-base
+    gst-plugins-good
+    gst-plugins-bad
+    gst-libav
+  ];
 in
 lib.warnIf cudaSupport
   "noctalia: `cudaSupport` no longer has any effect (autoAddDriverRunpath is now always applied); this argument will be removed in the future."
@@ -75,7 +86,8 @@ lib.warnIf cudaSupport
   postFixup = ''
     wrapProgram $out/bin/noctalia \
       --prefix PATH : ${lib.makeBinPath [ git ]} \
-      --prefix XDG_DATA_DIRS : "${glib.getSchemaDataDirPath gsettings-desktop-schemas}"
+      --prefix XDG_DATA_DIRS : "${glib.getSchemaDataDirPath gsettings-desktop-schemas}" \
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstPlugins}"
 
     $out/bin/noctalia completions bash | install -D /dev/stdin $out/share/bash-completion/completions/noctalia
     $out/bin/noctalia completions zsh  | install -D /dev/stdin $out/share/zsh/site-functions/_noctalia
@@ -124,6 +136,11 @@ lib.warnIf cudaSupport
     nlohmann_json
     tomlplusplus
     libical
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    # gstreamer-va-1.0 lets ui.video export VA decoder surfaces for zero-copy playback.
+    gst_all_1.gst-plugins-bad
+    libva
   ];
 
   mesonBuildType = "release";
@@ -131,6 +148,8 @@ lib.warnIf cudaSupport
   mesonFlags = [ "-Dtests=disabled" ];
 
   ninjaFlags = [ "-v" ];
+
+  passthru = { inherit gstPlugins; };
 
   meta = with lib; {
     description = "A sleek, customizable desktop shell crafted for Wayland.";

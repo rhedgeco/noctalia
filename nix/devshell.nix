@@ -31,6 +31,8 @@ pkgs.mkShell {
   shellHook = ''
     # Point to local assets so binaries find resources without installation
     export NOCTALIA_ASSETS_DIR="$PWD/assets"
+    # GStreamer plugins for ui.video, matching the packaged wrapper
+    export GST_PLUGIN_SYSTEM_PATH_1_0="${pkgs.lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" noctalia.gstPlugins}"
 
     echo " Noctalia dev-shell | 'just --list' to see available tasks"
   '';

@@ -31,7 +31,7 @@ flip_y   = false
 format = "{:%H:%M}"
 ```
 
-When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `button`, `calendar`, `clock`, `label`, `audio_visualizer`, `fancy_audio_visualizer`, `sticker`, `weather`, `media_player`, `volume`, and `sysmon` widget types plus an interactive edit mode.
+When enabled, Noctalia renders each desktop widget as its own tightly-sized layer-shell surface on the `Bottom` layer. The current implementation ships `button`, `calendar`, `clock`, `label`, `audio_visualizer`, `fancy_audio_visualizer`, `sticker`, `video`, `weather`, `media_player`, `volume`, and `sysmon` widget types plus an interactive edit mode.
 
 ---
 
@@ -432,6 +432,41 @@ opacity    = 1.0
 | ------------ | ------ | ------- | -------------------------------------------------------------- |
 | `image_path` | string | -       | Absolute path to the image file (PNG, JPEG, WebP, SVG, or GIF) |
 | `opacity`    | float  | `1.0`   | Sticker image opacity from `0.0` to `1.0`                      |
+
+---
+
+### video
+
+Plays a video file on a loop, muted. Decoding uses GStreamer with hardware decode where available, and decoded frames are drawn straight from the decoder's GPU buffers when the driver supports dmabuf export, so even 4K video stays cheap. The widget is also available on the lockscreen. It requires a build with video support (`-Dvideo`, enabled automatically when the GStreamer development packages are present); otherwise it renders nothing.
+
+```toml
+[desktop_widgets.widget.video_main]
+type     = "video"
+output   = "DP-1"
+cx       = 960.0
+cy       = 540.0
+box_width  = 0.0
+box_height = 0.0
+rotation = 0.0
+
+[desktop_widgets.widget.video_main.settings]
+video_path = "/path/to/video.mp4"
+fit        = "cover"
+radius     = 16
+width      = 640
+height     = 360
+```
+
+`width` and `height` set the widget's natural size, because the video's own dimensions aren't known until playback starts. They define the tile's aspect ratio; resizing the widget in edit mode scales it from there. Use `fit` to choose how a video whose aspect ratio differs from the tile is placed.
+
+| Setting      | Type   | Default   | Description                                                                                 |
+| ------------ | ------ | --------- | ------------------------------------------------------------------------------------------- |
+| `video_path` | string | -         | Absolute path to the video file (any format the installed GStreamer plugins can decode)     |
+| `fit`        | string | `"cover"` | `cover` fills the tile and crops, `contain` letterboxes, `stretch` ignores the aspect ratio |
+| `radius`     | int    | `0`       | Corner radius in logical pixels                                                             |
+| `width`      | int    | `480`     | Natural width in logical pixels                                                             |
+| `height`     | int    | `270`     | Natural height in logical pixels                                                            |
+| `opacity`    | float  | `1.0`     | Video opacity from `0.0` to `1.0`                                                           |
 
 ---
 

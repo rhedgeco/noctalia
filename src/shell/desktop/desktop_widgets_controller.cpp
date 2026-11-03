@@ -38,7 +38,7 @@ namespace {
   void normalizeDesktopWidgetSettings(DesktopWidgetState& widget) {
     clampOpacitySetting(widget, "background_opacity", 0.8);
 
-    if (widget.type == "sticker" || widget.type == "label") {
+    if (widget.type == "sticker" || widget.type == "label" || widget.type == "video") {
       const auto opacityIt = widget.settings.find("opacity");
       if (opacityIt == widget.settings.end()) {
         widget.settings.insert_or_assign("opacity", 1.0);

@@ -286,5 +286,11 @@
     "noctaliaVersion": null,
     "feature": "pixel-stream-fit",
     "introduced": "The `fit` prop (`contain`/`cover`/`stretch`) on `ui.pixelStream`, with pointer positions mapped through the chosen fit."
+  },
+  {
+    "level": 51,
+    "noctaliaVersion": null,
+    "feature": "video",
+    "introduced": "`ui.video` for playing a looping video file at native resolution, decoded by GStreamer with zero-copy hardware decoding where available."
   }
 ]

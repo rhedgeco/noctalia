@@ -14,6 +14,7 @@
 #include "shell/desktop/widgets/desktop_media_player_widget.h"
 #include "shell/desktop/widgets/desktop_sticker_widget.h"
 #include "shell/desktop/widgets/desktop_sysmon_widget.h"
+#include "shell/desktop/widgets/desktop_video_widget.h"
 #include "shell/desktop/widgets/desktop_volume_widget.h"
 #include "shell/desktop/widgets/desktop_weather_widget.h"
 #include "shell/desktop/widgets/plugin_desktop_widget.h"
@@ -281,6 +282,20 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         getStringSetting(settings, "image_path"), std::clamp(getFloatSetting(settings, "opacity", 1.0F), 0.0F, 1.0F)
     );
     applyCommonSettings(*widget, settings);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "video") {
+    auto widget = std::make_unique<DesktopVideoWidget>(DesktopVideoWidget::Options{
+        .path = getStringSetting(settings, "video_path"),
+        .fit = DesktopVideoWidget::fitFromString(getStringSetting(settings, "fit", "cover")),
+        .radius = getFloatSetting(settings, "radius", 0.0F),
+        .width = getFloatSetting(settings, "width", 480.0F),
+        .height = getFloatSetting(settings, "height", 270.0F),
+        .opacity = getFloatSetting(settings, "opacity", 1.0F),
+    });
+    applyCommonSettings(*widget, settings, false);
     widget->setContentScale(contentScale);
     return widget;
   }

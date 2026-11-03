@@ -616,7 +616,8 @@
         "trash": "Delete"
       },
       "dialogs": {
-        "select-sticker-image": "Select Sticker Image"
+        "select-sticker-image": "Select Sticker Image",
+        "select-video": "Select Video"
       },
       "settings": {
         "album-art-background": "Album Art Background",
@@ -653,12 +654,17 @@
         "display-graph": "Graph",
         "fade-when-idle": "Fade When Idle",
         "fill-color": "Fill Color",
+        "fit": "Fit",
+        "fit-contain": "Contain",
+        "fit-cover": "Cover",
+        "fit-stretch": "Stretch",
         "font-family": "Font",
         "font-family-default": "System default",
         "forecast-days": "Forecast Days",
         "format": "Format",
         "gauge-layout": "Gauge Layout",
         "glyph": "Glyph",
+        "height": "Height",
         "hide-when-no-media": "Hide When No Media",
         "highlight-color": "Highlight Color",
         "horizontal": "Horizontal",
@@ -681,6 +687,7 @@
         "network-speed-unit-megabytes": "MB/s",
         "opacity": "Opacity",
         "primary-color": "Primary Color",
+        "radius": "Corner Radius",
         "reset-defaults": "Reset to Defaults",
         "reversed": "Reversed",
         "ring-opacity": "Ring Opacity",
@@ -733,6 +740,7 @@
         "variant-primary": "Primary",
         "variant-secondary": "Secondary",
         "vertical": "Vertical",
+        "video-path": "Video",
         "visualization-mode": "Mode",
         "visualization-mode-all": "All",
         "visualization-mode-bars": "Bars",
@@ -741,7 +749,8 @@
         "visualization-mode-wave": "Wave",
         "visualization-mode-wave-rings": "Wave + Rings",
         "wave-thickness": "Wave Thickness",
-        "widget-section": "Widget"
+        "widget-section": "Widget",
+        "width": "Width"
       },
       "state": {
         "grid": "Grid"
@@ -759,6 +768,7 @@
         "media-player": "Media Player",
         "sticker": "Sticker",
         "system-monitor": "System Monitor",
+        "video": "Video",
         "volume": "Volume",
         "weather": "Weather"
       }

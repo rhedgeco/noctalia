@@ -9,6 +9,7 @@
 #include "render/scene/input_area.h"
 #include "scripting/ui/pixel_stream_view.h"
 #include "scripting/ui/ui_tree.h"
+#include "scripting/ui/video_view.h"
 #include "shell/visuals/graph.h"
 #include "ui/controls/box.h"
 #include "ui/controls/button.h"
@@ -505,6 +506,8 @@ namespace ui {
           "radius",       "fit",           "onPointerMove", "onPointerDown", "onPointerUp", "onPointerCancel",
           "onRightClick", "onMiddleClick", "onScroll",      "onTextInput",   "onKeyEvent",
       };
+      static const std::unordered_set<std::string> kVideo = {"width",   "height", "flexGrow", "opacity",
+                                                             "visible", "path",   "radius",   "fit"};
       static const std::unordered_set<std::string> kColorPicker = {
           "width",  "flexGrow", "opacity", "visible",  "value",       "alpha",
           "inputs", "swatches", "enabled", "onChange", "onChangeEnd",
@@ -574,6 +577,9 @@ namespace ui {
       }
       if (type == "pixel_stream") {
         return kPixelStream;
+      }
+      if (type == "video") {
+        return kVideo;
       }
       if (type == "color_picker") {
         return kColorPicker;
@@ -755,6 +761,9 @@ namespace ui {
     }
     if (desired.type == "pixel_stream") {
       return std::make_unique<PixelStreamView>();
+    }
+    if (desired.type == "video") {
+      return std::make_unique<VideoView>();
     }
     if (desired.type == "color_picker") {
       return std::make_unique<ColorPicker>();
@@ -1683,6 +1692,28 @@ namespace ui {
         kLog.warn("ui tree: pixelStream has unknown fit '{}'", *fit);
       }
       syncPixelStreamCallbacks(slot, desired, *view);
+      return;
+    }
+
+    if (desired.type == "video") {
+      auto* view = static_cast<VideoView*>(node);
+      view->setSize(
+          width != nullptr ? scaled(*width) : view->width(), height != nullptr ? scaled(*height) : view->height()
+      );
+      const std::string* path = strProp(desired, "path");
+      view->setPath(path != nullptr && !path->empty() ? (m_resolver ? m_resolver(*path) : *path) : std::string{});
+      const double* radius = numProp(desired, "radius");
+      view->setRadius(radius != nullptr ? std::max(0.0F, scaled(*radius)) : 0.0F);
+      const std::string* fit = strProp(desired, "fit");
+      if (fit == nullptr || *fit == "contain") {
+        view->setFit(ImageFit::Contain);
+      } else if (*fit == "cover") {
+        view->setFit(ImageFit::Cover);
+      } else if (*fit == "stretch") {
+        view->setFit(ImageFit::Stretch);
+      } else {
+        kLog.warn("ui tree: video has unknown fit '{}'", *fit);
+      }
       return;
     }
 

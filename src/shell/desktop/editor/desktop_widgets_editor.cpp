@@ -19,6 +19,7 @@
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/desktop/desktop_widget_settings_registry.h"
 #include "shell/desktop/widgets/desktop_login_box_widget.h"
+#include "shell/desktop/widgets/desktop_video_widget.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/render/wallpaper_node.h"
 #include "shell/render/wallpaper_types.h"
@@ -1564,7 +1565,7 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
     widget.settings.emplace("bands", static_cast<std::int64_t>(32));
     widget.settings.emplace("show_when_idle", true);
   }
-  if (widget.type == "fancy_audio_visualizer") {
+  if (widget.type == "fancy_audio_visualizer" || widget.type == "video") {
     widget.settings.emplace("background", false);
   }
   if (widget.type == "button") {
@@ -1577,23 +1578,28 @@ void DesktopWidgetsEditor::addWidget(const std::string& outputName, const std::s
     widget.settings.emplace("stat2", std::string("cpu_temp"));
   }
 
-  if (widget.type == "sticker") {
+  if (widget.type == "sticker" || widget.type == "video") {
+    // Both start from a file: prompt for it right away and drop the widget if the dialog is cancelled.
+    const bool video = widget.type == "video";
+    const char* pathKey = video ? "video_path" : "image_path";
     widget.settings.emplace("opacity", 1.0);
     auto widgetId = widget.id;
     m_snapshot.widgets.push_back(std::move(widget));
 
     FileDialogOptions options;
     options.mode = FileDialogMode::Open;
-    options.title = i18n::tr("desktop-widgets.editor.dialogs.select-sticker-image");
-    options.extensions = DirectoryScanner::imageExtensionFilter(true);
-    if (!FileDialog::open(std::move(options), [this, widgetId](std::optional<std::filesystem::path> result) {
-          deferEditorMutation([this, widgetId, result = std::move(result)] {
+    options.title = i18n::tr(
+        video ? "desktop-widgets.editor.dialogs.select-video" : "desktop-widgets.editor.dialogs.select-sticker-image"
+    );
+    options.extensions = video ? DesktopVideoWidget::fileExtensions() : DirectoryScanner::imageExtensionFilter(true);
+    if (!FileDialog::open(std::move(options), [this, widgetId, pathKey](std::optional<std::filesystem::path> result) {
+          deferEditorMutation([this, widgetId, pathKey, result = std::move(result)] {
             auto* state = findWidgetState(widgetId);
             if (state == nullptr) {
               return;
             }
             if (result) {
-              state->settings["image_path"] = result->string();
+              state->settings[pathKey] = result->string();
             } else {
               std::erase_if(m_snapshot.widgets, [&](const auto& w) { return w.id == widgetId; });
               m_selectedWidgetIds.erase(widgetId);
