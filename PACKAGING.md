@@ -74,6 +74,7 @@ No special linker is required. The default linker from the compiler driver is fi
 - Do **not** enable `-Dnative_optimizations=true` for distro packages (CPU-local codegen; not portable).
 - Tests: `-Dtests=disabled` (or leave `auto`, which skips tests for release).
 - `jemalloc`: recommended on glibc; Meson feature option `-Djemalloc=auto|enabled|disabled`. Only used on glibc builds.
+- `video`: video wallpapers through libmpv; Meson feature option `-Dvideo=auto|enabled|disabled`. libmpv is always linked dynamically and never vendored. Noctalia itself stays MIT, but libmpv is LGPL or GPL depending on how your distro built it (`-Dgpl=false` gives LGPL), and its FFmpeg build decides which codecs are available. Packagers who need to avoid a GPL runtime dependency can build with `-Dvideo=disabled`.
 - `system_libraries`: `-Dsystem_libraries=true` links system copies of the vendored libraries instead of building `third_party/`. See [Vendored](#vendored-no-system-package) for the expected layout.
 
 Prefix/datadir are baked into the binary via `NOCTALIA_INSTALL_PREFIX` / `NOCTALIA_INSTALL_DATADIR`. Install with the same prefix you configured.

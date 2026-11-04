@@ -39,6 +39,7 @@
   libical,
   wireplumber,
   jemalloc,
+  mpv-unwrapped,
   makeWrapper,
   git,
   gsettings-desktop-schemas,
@@ -124,6 +125,8 @@ lib.warnIf cudaSupport
     nlohmann_json
     tomlplusplus
     libical
+    # libmpv for video wallpapers (-Dvideo). nixpkgs builds it GPL; see PACKAGING.md.
+    mpv-unwrapped
   ];
 
   mesonBuildType = "release";

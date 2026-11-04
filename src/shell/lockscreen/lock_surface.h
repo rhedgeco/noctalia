@@ -2,6 +2,7 @@
 
 #include "capture/screencopy_capture.h"
 #include "config/config_service.h"
+#include "media/video_service.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/blur_cache.h"
 #include "render/core/color.h"
@@ -59,6 +60,8 @@ public:
   void setKeyboardIndicators(bool capsLock, bool hasMultipleLayouts, bool layoutSwitchable, std::string layoutLabel);
   void setTextureCache(SharedTextureCache* cache) noexcept { m_textureCache = cache; }
   void setWallpaperPath(std::string wallpaperPath);
+  // Looping video drawn over the wallpaper once it has a frame; empty stops it.
+  void setVideoPath(std::string videoPath);
   void setWallpaperFillMode(WallpaperFillMode fillMode);
   void setWallpaperCoverage(TextureCoverage coverage);
   void setWallpaperFillColor(Color fillColor);
@@ -140,6 +143,8 @@ private:
   void invalidateSleepFrame();
   static void handleSleepFrameDone(void* data, wl_callback* callback, std::uint32_t callbackData);
   void applyWallpaperTexture();
+  void syncVideo();
+  void applyVideoTexture();
   void applyBlurredDesktopTexture();
   void releaseCaptureTextures();
   void layoutScene(std::uint32_t width, std::uint32_t height);
@@ -165,6 +170,7 @@ private:
   Node* m_widgetLayer = nullptr;
   LockscreenTransitionCover* m_transitionCover = nullptr;
   WallpaperNode* m_wallpaper = nullptr;
+  WallpaperNode* m_videoWallpaper = nullptr;
   Box* m_tintOverlay = nullptr;
   Box* m_backdrop = nullptr;
   Flex* m_loginPanel = nullptr;
@@ -205,6 +211,9 @@ private:
   TextureHandle m_transitionCaptureTexture{};
   BlurCache m_blurCache;
   BlurCache m_wallpaperBlurCache;
+  BlurCache m_videoBlurCache;
+  std::string m_videoPath;
+  VideoHandle m_video;
   std::optional<ScreencopyImage> m_desktopCapture;
   LockscreenTransitionKind m_transition = LockscreenTransitionKind::Fade;
   LockscreenTransitionParams m_transitionParams;

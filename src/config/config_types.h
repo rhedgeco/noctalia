@@ -583,6 +583,9 @@ struct WallpaperConfig {
   float transitionDurationMs = 1500.0F;
   float edgeSmoothness = 0.3F;
   bool transitionOnStartup = false;
+  // Looping, silent video drawn over the static wallpaper (desktop and lock screen) once it plays.
+  // The static wallpaper still drives the palette and stays visible if playback fails. Empty = off.
+  std::string video;
   std::string directory;      // empty = XDG_PICTURES_DIR
   std::string directoryLight; // empty = directory
   std::string directoryDark;  // empty = directory

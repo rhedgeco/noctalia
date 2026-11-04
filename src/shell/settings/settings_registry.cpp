@@ -7,6 +7,7 @@
 #include "core/log.h"
 #include "i18n/i18n.h"
 #include "launcher/panel_catalog.h"
+#include "media/video_service.h"
 #include "pipewire/sound_player.h"
 #include "shell/app_icon_colorization_settings.h"
 #include "shell/bar/widget_gesture.h"
@@ -692,6 +693,25 @@ namespace settings {
         tr("settings.schema.wallpaper.fill-color.description"), {"wallpaper", "fill_color"},
         colorSpecPicker(cfg.wallpaper.fillColor, true), "background solid color"
     ));
+    if (VideoService::supported()) {
+      entries.push_back(makeEntry(
+          SettingsSection::Wallpaper, "video", tr("settings.schema.wallpaper.video.label"),
+          tr("settings.schema.wallpaper.video.description"), {"wallpaper", "video"},
+          TextSetting{
+              .value = cfg.wallpaper.video,
+              .placeholder = tr("settings.schema.wallpaper.video.placeholder"),
+              .browseMode = TextSettingBrowseMode::OpenFile,
+              .browseFileExtensions = VideoService::fileExtensionFilter(),
+              .browseFallbackDirectory = wallpaper::resolveGlobalWallpaperDirectory(
+                  cfg.wallpaper,
+                  wallpaper::effectiveThemeMode(
+                      shellThemeMode(cfg.theme), shellThemeMode(cfg.theme) == ThemeMode::Light
+                  )
+              ),
+          },
+          "video animated live movie mp4 background"
+      ));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Wallpaper, "directories", tr("settings.schema.wallpaper.directory.label"),
         tr("settings.schema.wallpaper.directory.description"), {"wallpaper", "directory"},

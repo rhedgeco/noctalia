@@ -72,6 +72,7 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_asyncTextureCache);
   sources.push_back(&m_sharedTextureCache);
   sources.push_back(&m_pixelStreamService);
+  sources.push_back(&m_videoService);
   return sources;
 }
 

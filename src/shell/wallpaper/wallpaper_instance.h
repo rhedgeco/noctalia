@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/config_types.h"
+#include "media/video_service.h"
 #include "render/animation/animation_manager.h"
 #include "render/core/color.h"
 #include "render/core/shared_texture_cache.h"
@@ -32,6 +33,8 @@ struct WallpaperInstance {
   std::unique_ptr<Node> sceneRoot;
   Box* fillNode = nullptr;
   WallpaperNode* wallpaperNode = nullptr;
+  // Drawn over wallpaperNode while the configured video has a frame.
+  WallpaperNode* videoNode = nullptr;
 
   // Wallpaper state
   std::string currentPath;
@@ -46,6 +49,8 @@ struct WallpaperInstance {
   // Image still decoding; it starts the change to loadingPath once its texture is uploaded.
   SharedTextureCache::Lease loadingImage;
   std::string loadingPath;
+  // Playback of wallpaper.video; independent of the static wallpaper state above.
+  VideoHandle video;
 
   // Transition state
   float transitionTime = 0.0F;

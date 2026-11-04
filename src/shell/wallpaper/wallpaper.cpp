@@ -491,6 +491,7 @@ void Wallpaper::reload() {
   // changes that take effect immediately without a texture reload.
   for (auto& inst : m_instances) {
     refreshTextureCoverage(*inst);
+    syncVideo(*inst);
     updateRendererState(*inst);
     inst->surface->requestRedraw();
   }
@@ -1293,6 +1294,9 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->fillNode = static_cast<Box*>(instance->sceneRoot->addChild(std::move(fillNode)));
   auto wallpaperNode = std::make_unique<WallpaperNode>();
   instance->wallpaperNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(wallpaperNode)));
+  auto videoNode = std::make_unique<WallpaperNode>();
+  videoNode->setVisible(false);
+  instance->videoNode = static_cast<WallpaperNode*>(instance->sceneRoot->addChild(std::move(videoNode)));
   instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
@@ -1304,8 +1308,11 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     inst->fillNode->setSize(sw, sh);
     inst->wallpaperNode->setPosition(0.0F, 0.0F);
     inst->wallpaperNode->setSize(sw, sh);
+    inst->videoNode->setPosition(0.0F, 0.0F);
+    inst->videoNode->setSize(sw, sh);
 
     refreshTextureCoverage(*inst);
+    syncVideo(*inst);
     if (inst->currentPath.empty() && !wallpaperPath.empty()) {
       loadWallpaper(*inst, wallpaperPath);
     } else {
@@ -1326,6 +1333,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 }
 
 void Wallpaper::releaseInstanceTextures(WallpaperInstance& inst) {
+  inst.video.reset();
   inst.currentImage.reset();
   inst.nextImage.reset();
   cancelLoading(inst);
@@ -1397,6 +1405,33 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
 
   cancelLoading(instance);
   beginWallpaperChange(instance, path, WallpaperSourceKind::Image, std::move(image), color);
+}
+
+void Wallpaper::syncVideo(WallpaperInstance& instance) {
+  const std::string& path = m_config->config().wallpaper.video;
+  if (path.empty()) {
+    instance.video.reset();
+  } else if (instance.video.path() != path) {
+    auto* inst = &instance;
+    // On failure the handle stays empty and the static wallpaper keeps showing.
+    instance.video.open(path, [this, inst] {
+      updateVideoNode(*inst);
+      inst->surface->requestRedraw();
+    });
+  }
+  updateVideoNode(instance);
+}
+
+void Wallpaper::updateVideoNode(WallpaperInstance& instance) {
+  auto* node = instance.videoNode;
+  if (node == nullptr) {
+    return;
+  }
+  // Re-read every frame: the texture id changes when the video's size does. Fill mode, fill
+  // color, and span are kept in step with wallpaperNode by updateRendererState().
+  const TextureHandle texture = instance.video.texture();
+  node->setVisible(texture.id != TextureId{});
+  node->setTextures(texture.id, {}, static_cast<float>(texture.width), static_cast<float>(texture.height), 0.0F, 0.0F);
 }
 
 void Wallpaper::onImageChanged(WallpaperInstance& instance) {
@@ -1632,9 +1667,15 @@ void Wallpaper::updateRendererState(WallpaperInstance& instance) {
   wallpaperNode->setFillMode(wpConfig.fillMode);
   wallpaperNode->setFillColor(fillColor);
 
-  if (wpConfig.fillMode == WallpaperFillMode::Span && m_wayland != nullptr) {
-    wallpaperNode->setSpan(computeWallpaperSpanParams(m_wayland->outputs(), instance.outputName));
-  } else {
-    wallpaperNode->setSpan(WallpaperSpanParams{});
+  const WallpaperSpanParams span = wpConfig.fillMode == WallpaperFillMode::Span && m_wayland != nullptr
+      ? computeWallpaperSpanParams(m_wayland->outputs(), instance.outputName)
+      : WallpaperSpanParams{};
+  wallpaperNode->setSpan(span);
+
+  if (instance.videoNode != nullptr) {
+    instance.videoNode->setFillMode(wpConfig.fillMode);
+    instance.videoNode->setFillColor(fillColor);
+    instance.videoNode->setSpan(span);
   }
+  updateVideoNode(instance);
 }

@@ -1509,6 +1509,7 @@
         "toasts": "Toasts",
         "transition": "Transition",
         "user": "User",
+        "video": "Video",
         "wallpaper": "Wallpaper",
         "weather": "Weather",
         "widget-list": "Widget List",
@@ -3906,6 +3907,11 @@
         "transitions": {
           "description": "Effects available when changing wallpaper (one is picked at random per change)",
           "label": "Transition Effects"
+        },
+        "video": {
+          "description": "Silent, looping video shown over the wallpaper on the desktop and lock screen",
+          "label": "Video Wallpaper",
+          "placeholder": "No video"
         }
       }
     },

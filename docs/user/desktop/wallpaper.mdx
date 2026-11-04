@@ -16,6 +16,7 @@ transition          = ["fade", "wipe", "disc", "stripes", "zoom", "honeycomb", "
 transition_duration = 1500      # milliseconds
 edge_smoothness     = 0.3       # 0.0 – 1.0
 transition_on_startup = false   # animate the first wallpaper at shell startup (v4-style)
+video               = ""        # optional looping, silent video drawn over the wallpaper (needs a build with libmpv)
 
 # Directory browsed by the wallpaper picker panel. Leave empty to use the
 # standard XDG Pictures directory (from `XDG_PICTURES_DIR` or `user-dirs.dirs`).
@@ -90,6 +91,10 @@ By default, the first wallpaper on each output appears immediately with no trans
 When automation is enabled, Noctalia picks one image from the resolved browse folder at shell startup, then keeps picking on the configured interval and applies it to all connected outputs in sync. `order = "random"` chooses a random image each cycle. `order = "alphabetical"` sorts paths case-insensitively and advances to the next image each cycle (wrapping at the end).
 
 Rotation also holds while the lock screen is up. With `pause_on_fullscreen = true` it holds while any window is fullscreen as well, so games and videos are not interrupted by a transition and theme regeneration; a switch that came due in the meantime happens as soon as the window leaves fullscreen. Fullscreen detection uses the `wlr-foreign-toplevel-management` protocol, so it has no effect on compositors that do not provide it.
+
+### Video wallpaper
+
+Set `video` to a video file or animated GIF to play it, looping and without sound, on every output and on the lock screen. Anything mpv can open works; the file picker in settings just narrows the list to common video formats and GIFs. The video is drawn over the regular wallpaper, which keeps driving the color palette and stays visible until the first frame arrives or if the video can't be played. A custom `[lockscreen] wallpaper` takes precedence on the lock screen. Video support needs a Noctalia build with libmpv (`-Dvideo`).
 
 ## Favorites
 

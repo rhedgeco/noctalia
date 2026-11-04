@@ -1276,6 +1276,18 @@ std::string LockScreen::wallpaperPathForOutput(const std::string& connectorName)
   return m_configService->getWallpaperPath(connectorName);
 }
 
+std::string LockScreen::videoPath() const {
+  if (m_configService == nullptr) {
+    return {};
+  }
+  const auto& config = m_configService->config();
+  // A dedicated lock screen wallpaper replaces the desktop look, video included.
+  if (!config.lockscreen.wallpaper.empty() || !config.wallpaper.enabled) {
+    return {};
+  }
+  return config.wallpaper.video;
+}
+
 void LockScreen::applyWallpaperStyleToSurfaces() {
   if (!isActive() || m_configService == nullptr) {
     return;
@@ -1290,6 +1302,7 @@ void LockScreen::applyWallpaperStyleToSurfaces() {
       continue;
     }
     instance.surface->setWallpaperPath(wallpaperPathForOutput(instance.connectorName));
+    instance.surface->setVideoPath(videoPath());
     instance.surface->setWallpaperFillMode(fillMode);
     instance.surface->setWallpaperCoverage(
         wallpaperTextureCoverage(m_wayland->outputs(), instance.outputName, fillMode)
@@ -1307,6 +1320,7 @@ void LockScreen::createInstance(const WaylandOutput& output) {
   surface->setOutputKey(desktop_widgets::outputKey(output));
   if (m_configService != nullptr) {
     surface->setWallpaperPath(wallpaperPathForOutput(output.connectorName));
+    surface->setVideoPath(videoPath());
     const WallpaperFillMode fillMode = m_configService->config().wallpaper.fillMode;
     surface->setWallpaperFillMode(fillMode);
     surface->setWallpaperCoverage(wallpaperTextureCoverage(m_wayland->outputs(), output.name, fillMode));

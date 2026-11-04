@@ -152,6 +152,11 @@ libjxl_threads_dep  = dependency('libjxl_threads', required: true)
 # ── System: libsndfile (sound effect decoding) ───────────────────────────────
 sndfile_dep = dependency('sndfile', required: true)
 
+# ── System: libmpv (video wallpapers, optional) ──────────────────────────────
+# Dynamically linked only. libmpv's license (LGPL or GPL) depends on how the
+# distro built it; see PACKAGING.md.
+mpv_dep = dependency('mpv', required: get_option('video'))
+
 # ── Wuffs, fzy, Material Color Utilities, Luau ──────────────────────────────
 # Vendored under third_party/ by default. -Dsystem_libraries=true links system
 # copies instead. None of them ship pkg-config files, so they are found by
@@ -345,6 +350,7 @@ _noctalia_compile_definitions = [
   '-DNOCTALIA_INSTALL_PREFIX="' + get_option('prefix') + '"',
   '-DNOCTALIA_INSTALL_DATADIR="' + get_option('datadir') + '"',
   '-DNOCTALIA_VERSION="' + meson.project_version() + '"',
+  '-DNOCTALIA_HAVE_VIDEO=' + (mpv_dep.found() ? '1' : '0'),
 ] + jemalloc_cpp_args
 
 # PipeWire's pkg-config adds -fno-strict-aliasing and -fno-strict-overflow to
@@ -554,6 +560,7 @@ _noctalia_sources = files(
   'src/launcher/wallpaper_provider.cpp',
   'src/launcher/window_provider.cpp',
   'src/launcher/usage_tracker.cpp',
+  'src/media/video_service.cpp',
   'src/net/http_client.cpp',
   'src/net/uri.cpp',
   'src/net/url_open.cpp',
@@ -1027,7 +1034,7 @@ _noctalia_system_dependencies = [
   tomlplusplus_dep,
   libwebp_dep,
   sndfile_dep,
-] + jemalloc_deps + (dl_dep.found() ? [dl_dep] : [])
+] + jemalloc_deps + (dl_dep.found() ? [dl_dep] : []) + (mpv_dep.found() ? [mpv_dep] : [])
 
 _noctalia_dependencies = _noctalia_system_dependencies + [
   mcu_dep,

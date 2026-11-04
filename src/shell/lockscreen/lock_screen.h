@@ -133,6 +133,7 @@ private:
   void applyWallpaperStyleToSurfaces();
   bool isInteractiveOutput(const WaylandOutput& output) const;
   std::string wallpaperPathForOutput(const std::string& connectorName) const;
+  std::string videoPath() const;
   void createInstance(const WaylandOutput& output);
   void chooseTransition();
   void handleTransitionStateChanged();

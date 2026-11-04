@@ -117,6 +117,9 @@ private:
   );
   void createInstance(const WaylandOutput& output);
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
+  // Starts, switches, or stops the video overlay to match wallpaper.video.
+  void syncVideo(WallpaperInstance& instance);
+  void updateVideoNode(WallpaperInstance& instance);
   void beginWallpaperChange(
       WallpaperInstance& instance, const std::string& path, WallpaperSourceKind kind, SharedTextureCache::Lease image,
       const Color& color

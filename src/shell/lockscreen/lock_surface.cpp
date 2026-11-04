@@ -166,6 +166,12 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
   m_wallpaper = static_cast<WallpaperNode*>(m_backgroundLayer->addChild(std::move(wallpaper)));
   m_wallpaper->setZIndex(0);
 
+  // Same z as m_wallpaper; inserted after it so it draws on top.
+  auto videoWallpaper = std::make_unique<WallpaperNode>();
+  videoWallpaper->setVisible(false);
+  m_videoWallpaper = static_cast<WallpaperNode*>(m_backgroundLayer->addChild(std::move(videoWallpaper)));
+  m_videoWallpaper->setZIndex(0);
+
   m_backgroundLayer->addChild(
       ui::box({
           .out = &m_tintOverlay,
@@ -825,6 +831,14 @@ void LockSurface::setWallpaperPath(std::string wallpaperPath) {
   requestLayout();
 }
 
+void LockSurface::setVideoPath(std::string videoPath) {
+  if (m_videoPath == videoPath) {
+    return;
+  }
+  m_videoPath = std::move(videoPath);
+  requestLayout();
+}
+
 void LockSurface::setWallpaperFillMode(WallpaperFillMode fillMode) {
   if (m_wallpaperFillMode == fillMode) {
     return;
@@ -832,6 +846,7 @@ void LockSurface::setWallpaperFillMode(WallpaperFillMode fillMode) {
   m_wallpaperFillMode = fillMode;
   if (m_wallpaper != nullptr) {
     m_wallpaper->setFillMode(m_wallpaperFillMode);
+    m_videoWallpaper->setFillMode(m_wallpaperFillMode);
   }
   requestRedraw();
 }
@@ -852,6 +867,7 @@ void LockSurface::setWallpaperFillColor(Color fillColor) {
   m_wallpaperFillColor = fillColor;
   if (m_wallpaper != nullptr) {
     m_wallpaper->setFillColor(m_wallpaperFillColor);
+    m_videoWallpaper->setFillColor(m_wallpaperFillColor);
   }
   if (m_backdrop != nullptr) {
     m_backdrop->setVisible(m_wallpaperFillColor.a > 0.0F);
@@ -1320,6 +1336,8 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
     m_backgroundLayer->setPosition(0.0F, 0.0F);
     m_backgroundLayer->setSize(sw, sh);
     m_wallpaper->setVisible(false);
+    m_videoWallpaper->setVisible(false);
+    m_video.reset();
     m_tintOverlay->setVisible(false);
     m_backdrop->setPosition(0.0F, 0.0F);
     m_backdrop->setSize(sw, sh);
@@ -1355,6 +1373,7 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   }
 
   applyWallpaperTexture();
+  syncVideo();
 
   m_backgroundLayer->setVisible(true);
   m_wallpaper->setVisible(true);
@@ -1412,6 +1431,10 @@ void LockSurface::layoutScene(std::uint32_t width, std::uint32_t height) {
   m_wallpaper->setSize(sw, sh);
   m_wallpaper->setFillMode(m_wallpaperFillMode);
   m_wallpaper->setFillColor(m_wallpaperFillColor);
+  m_videoWallpaper->setPosition(0.0F, 0.0F);
+  m_videoWallpaper->setSize(sw, sh);
+  m_videoWallpaper->setFillMode(m_wallpaperFillMode);
+  m_videoWallpaper->setFillColor(m_wallpaperFillColor);
 
   m_backdrop->setPosition(0.0F, 0.0F);
   m_backdrop->setSize(sw, sh);
@@ -2193,6 +2216,44 @@ void LockSurface::applyWallpaperTexture() {
   m_wallpaperDirty = !loaded;
 }
 
+void LockSurface::syncVideo() {
+  // A blurred desktop capture already contains the desktop's video frame, and blacked-out outputs
+  // show nothing, so neither needs its own decode.
+  if (m_videoPath.empty() || m_blackout || usesDesktopCaptureBackground()) {
+    m_video.reset();
+  } else if (m_video.path() != m_videoPath) {
+    // On failure the handle stays empty and the static wallpaper keeps showing.
+    m_video.open(m_videoPath, [this] {
+      applyVideoTexture();
+      requestRedraw();
+    });
+  }
+  applyVideoTexture();
+}
+
+void LockSurface::applyVideoTexture() {
+  // Re-read every frame: the texture id changes when the video's size does.
+  TextureHandle texture = m_video.texture();
+  if (texture.id != 0 && m_blurIntensity > 0.0F) {
+    texture = {};
+    if (renderContext() != nullptr && renderTarget().isReady()) {
+      auto* renderer = renderContext();
+      renderer->makeCurrent(renderTarget());
+      static constexpr int kBlurRounds = 3;
+      // Every frame lands in the same texture id, so the cache can't detect the change itself.
+      m_videoBlurCache.invalidate();
+      texture = m_videoBlurCache.get(
+          renderer->backend(), m_video.texture(), renderTarget().bufferWidth(), renderTarget().bufferHeight(),
+          m_blurIntensity * 40.0F, kBlurRounds
+      );
+    }
+  }
+  m_videoWallpaper->setVisible(texture.id != 0);
+  m_videoWallpaper->setTextures(
+      texture.id, {}, static_cast<float>(texture.width), static_cast<float>(texture.height), 0.0F, 0.0F
+  );
+}
+
 void LockSurface::releaseCaptureTextures() {
   if (renderContext() == nullptr) {
     m_blurredWallpaperTexture = {};
@@ -2201,6 +2262,7 @@ void LockSurface::releaseCaptureTextures() {
     m_transitionCaptureTexture = {};
     m_blurCache.destroy();
     m_wallpaperBlurCache.destroy();
+    m_videoBlurCache.destroy();
     return;
   }
 
@@ -2224,6 +2286,7 @@ void LockSurface::releaseCaptureTextures() {
   }
   m_blurCache.destroy();
   m_wallpaperBlurCache.destroy();
+  m_videoBlurCache.destroy();
 }
 
 void LockSurface::applyBlurredDesktopTexture() {
@@ -2310,6 +2373,7 @@ void LockSurface::onGpuResourcesInvalidated() {
 void LockSurface::prepareForGraphicsReset() noexcept {
   m_blurCache.abandon();
   m_wallpaperBlurCache.abandon();
+  m_videoBlurCache.abandon();
   m_blurredWallpaperTexture = {};
   m_captureSourceTexture = {};
   m_blurredDesktopTexture = {};

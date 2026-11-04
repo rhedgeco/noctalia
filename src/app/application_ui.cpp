@@ -111,6 +111,7 @@ void Application::initUiRenderSurfacesAndSettings() {
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   Style::setRtl(i18n::Service::instance().rtl());
   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
+  m_videoService.initialize(m_wayland.display(), m_glShared.hasSharedContext() ? &m_glShared : nullptr);
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(
